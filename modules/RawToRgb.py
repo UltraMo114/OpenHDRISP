@@ -1,17 +1,18 @@
-import rawpy
 import numpy as np
 
 class RawToRgb:
-    def __init__(self, raw_file_path, demosaic=False, bit_depth=12):
+    def __init__(self, raw_data, bayer_pattern, demosaic=False, bit_depth=12):
         """
         Initialize the RawToRgb module.
 
         Parameters:
-        - raw_file_path (str): Path to the RAW image file.
+        - raw_data (np.ndarray): RAW image data (H x W).
+        - bayer_pattern (np.ndarray): Bayer Pattern layout (e.g., [[0, 1], [3, 2]] for RGGB or [[2, 3], [1, 0]] for BGGR).
         - demosaic (bool): Whether to apply demosaicing. Default is False.
         - bit_depth (int): Bit depth of the RAW image (e.g., 10, 12, 14). Default is 12.
         """
-        self.raw_file_path = raw_file_path
+        self.raw_data = raw_data
+        self.bayer_pattern = bayer_pattern
         self.demosaic = demosaic
         self.bit_depth = bit_depth
 
@@ -22,26 +23,17 @@ class RawToRgb:
         Returns:
         - rgb_data (np.ndarray): Camera RGB image (H x W x 3), normalized to [0, 1].
         """
-        # Step 1: Read the RAW file using rawpy
-        with rawpy.imread(self.raw_file_path) as raw:
-            # Extract the Bayer Pattern data
-            bayer_data = raw.raw_image  # Bayer Pattern data (H x W)
-            bayer_pattern = raw.raw_pattern  # Bayer Pattern layout (e.g., RGGB, BGGR)
+        # Step 1: Normalize the RAW data to [0, 1] based on bit_depth
+        max_value = 2 ** self.bit_depth - 1
+        bayer_data = self.raw_data.astype(np.float32) / max_value
 
-            # Print the Bayer Pattern layout for debugging
-            print(f"Bayer Pattern: {bayer_pattern}")
-
-            # Step 2: Normalize the RAW data to [0, 1] based on bit_depth
-            max_value = 2 ** self.bit_depth - 1
-            bayer_data = bayer_data.astype(np.float32) / max_value
-
-            # Step 3: Convert RAW to Camera RGB
-            if self.demosaic:
-                # Apply basic bilinear demosaicing
-                rgb_data = self._demosaic_bilinear(bayer_data, bayer_pattern)
-            else:
-                # No demosaic: Directly map RAW to RGB
-                rgb_data = self._no_demosaic(bayer_data, bayer_pattern)
+        # Step 2: Convert RAW to Camera RGB
+        if self.demosaic:
+            # Apply basic bilinear demosaicing
+            rgb_data = self._demosaic_bilinear(bayer_data, self.bayer_pattern)
+        else:
+            # No demosaic: Directly map RAW to RGB
+            rgb_data = self._no_demosaic(bayer_data, self.bayer_pattern)
 
         return rgb_data
 
