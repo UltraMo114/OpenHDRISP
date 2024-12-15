@@ -35,7 +35,7 @@ class ImagePipeline:
         self.blc_data = raw_blc.process(self.raw_data)
 
     def convert_raw_to_rgb(self):
-        raw_to_rgb = RawToRgb(self.blc_data, self.bayer_pattern, demosaic=True, bit_depth=self.bit_depth)
+        raw_to_rgb = RawToRgb(self.blc_data, self.bayer_pattern, demosaic=self.params["demosaic"], bit_depth=self.bit_depth)
         self.rgb_data = raw_to_rgb.process()
 
     def convert_rgb_to_xyz(self):
@@ -47,7 +47,7 @@ class ImagePipeline:
         self.rgb_data_final = xyz_to_rgb.process(self.xyz_data)
 
     def save_image(self):
-        rgb_to_img = RgbToImg(mode=self.params["output_mode"])
+        rgb_to_img = RgbToImg(mode=self.params["output_mode"], gamma=self.params["gamma"], color_space=self.params["color_space"])
         rgb_to_img.process(self.rgb_data_final, self.params["output_path"])
         print(f"Image saved to {self.params['output_path']}")
 
@@ -75,7 +75,9 @@ def main():
             [0.4124, 0.3576, 0.1805],
             [0.2126, 0.7152, 0.0722],
             [0.0193, 0.1192, 0.9505]
-        ])
+        ]),
+        "gamma": 2.2,
+        "demosaic": False
     }
 
     # Create an instance of the ImagePipeline class
