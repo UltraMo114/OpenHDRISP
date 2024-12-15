@@ -26,23 +26,21 @@ with open(raw_file_path, 'rb') as f:
     print(f"Aperture: {aperture}")
     print(f"ISO: {iso}")
 
-# Step 2: Read RAW data using rawpy
-with rawpy.imread(raw_file_path) as raw:
-    # Extract RAW data, Bayer Pattern, and bit depth
-    raw_data = raw.raw_image  # RAW data (H x W)
-    bayer_pattern = raw.raw_pattern  # Bayer Pattern (e.g., [[0, 1], [3, 2]] for RGGB)
-    bit_depth = math.log(raw.white_level + 1, 2)   # Bit depth of the RAW data
-    blc_param = raw.black_level_per_channel  # Black level per channel (R, G1, G2, B)
-    # # Print Bayer Pattern and bit depth
-    # print(f"Bayer Pattern: {bayer_pattern}")
-    # print(f"Bit Depth: {bit_depth}")
+# # Step 2: Read RAW data using rawpy
+# with rawpy.imread(raw_file_path) as raw:
 
+raw = rawpy.imread(raw_file_path)
+# Extract RAW data, Bayer Pattern, and bit depth
+raw_data = raw.raw_image  # RAW data (H x W)
+bayer_pattern = raw.raw_pattern  # Bayer Pattern (e.g., [[0, 1], [3, 2]] for RGGB)
+bit_depth = math.log(raw.white_level + 1, 2)   # Bit depth of the RAW data
+blc_param = raw.black_level_per_channel[0]  # Black level per channel (R, G1, G2, B)
 # Step 3: Apply Black Level Correction (BLC)
 blc_params = {
-    "R": blc_param[0],  # Black level offset for R channel
-    "G1": blc_param[1],  # Black level offset for G1 channel
-    "G2": blc_param[2],  # Black level offset for G2 channel
-    "B": blc_param[3]   # Black level offset for B channel
+    "R": blc_param,  # Black level offset for R channel
+    "G1": blc_param,  # Black level offset for G1 channel
+    "G2": blc_param,  # Black level offset for G2 channel
+    "B": blc_param   # Black level offset for B channel
 }
 raw_blc = RawBlc(bayer_pattern, blc_params)
 blc_data = raw_blc.process(raw_data)
