@@ -1,5 +1,7 @@
 from modules.RawToRgb import RawToRgb
 from modules.RgbToXyz import RgbToXyz
+from modules.XyzToRgb import XyzToRgb
+from modules.RgbToImg import RgbToImg
 import matplotlib.pyplot as plt
 import numpy as np
 import exifread
@@ -42,9 +44,22 @@ rgb_to_xyz = RgbToXyz(method="greyworld", ccm=ccm)
 
 # Convert RGB to XYZ
 xyz_data = rgb_to_xyz.process(rgb_data_no_demosaic)
-print("XYZ data shape:", xyz_data.shape)
-plt.imshow(xyz_data)
+
+xyz_to_rgb = XyzToRgb(method="default", color_space="sRGB")
+
+rgb_data = xyz_to_rgb.process(xyz_data)
+print(np.amax(rgb_data), np.amin(rgb_data))
+plt.imshow(rgb_data)
 plt.show()
+
+rgb_to_img = RgbToImg(mode="SDR")
+
+# Save the image as a 16-bit TIFF
+output_path = "output_sdr_default_gamma.jpeg"
+rgb_to_img.process(rgb_data, output_path)
+print(f"SDR image saved to {output_path}")
+# print("XYZ data shape:", xyz_data.shape)
+
 
 # # 读取 .npy 文件
 # data = np.load('ILCE7CM2_Ver2_D65.npy')
