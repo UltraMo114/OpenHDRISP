@@ -17,6 +17,7 @@ class ImagePipeline:
         self.rgb_data = None
         self.xyz_data = None
         self.rgb_data_final = None
+        self.exposure_factor = self.read_exif()
 
     def read_raw_data(self):
         raw = rawpy.imread(self.params["raw_file_path"])
@@ -30,6 +31,15 @@ class ImagePipeline:
             "B": raw.black_level_per_channel[3]
         }
 
+    def read_exif(self):
+        tags = exifread.process_file(open(self.params["raw_file_path"], 'rb'))
+        shutter_speed = tags['EXIF ExposureTime'].values[0]
+        aperture = tags['EXIF FNumber'].values[0]
+        ISO = tags['EXIF ISOSpeedRatings'].values[0]
+        CCM_aperture, CCM_SS, CCM_ISO = 8, 1/4, 100
+        expo_factor = (CCM_SS / shutter_speed) * (aperture / CCM_aperture)**2 * (CCM_ISO / ISO)
+        return expo_factor
+
     def apply_blc(self):
         raw_blc = RawBlc(self.bayer_pattern, self.blc_params)
         self.blc_data = raw_blc.process(self.raw_data)
@@ -39,7 +49,7 @@ class ImagePipeline:
         self.rgb_data = raw_to_rgb.process()
 
     def convert_rgb_to_xyz(self):
-        rgb_to_xyz = RgbToXyz(method=self.params["rgb_to_xyz_method"], ccm=self.params["ccm"])
+        rgb_to_xyz = RgbToXyz(method=self.params["rgb_to_xyz_method"], ccm=self.params["ccm"], polynomial_coeffs=self.params["polynomial_coeffs"], bit_depth=self.bit_depth, expo_factor=self.exposure_factor)
         self.xyz_data = rgb_to_xyz.process(self.rgb_data)
 
     def convert_xyz_to_rgb(self):
@@ -47,7 +57,7 @@ class ImagePipeline:
         self.rgb_data_final = xyz_to_rgb.process(self.xyz_data)
 
     def save_image(self):
-        rgb_to_img = RgbToImg(mode=self.params["output_mode"], gamma=self.params["gamma"], color_space=self.params["color_space"])
+        rgb_to_img = RgbToImg(mode=self.params["output_mode"], gamma=self.params["gamma"], color_space=self.params["color_space"], hdr_format= self.params["hdr_format"])
         rgb_to_img.process(self.rgb_data_final, self.params["output_path"])
         print(f"Image saved to {self.params['output_path']}")
 
@@ -66,18 +76,21 @@ def main():
     # Parameters dictionary
     params = {
         "raw_file_path": "MCCC.dng",
-        "rgb_to_xyz_method": "greyworld",
+        "rgb_to_xyz_method": "polynomial", ## greyworld = AWB + CCM, polynomial = polynomial transform
         "xyz_to_rgb_method": "default",
-        "color_space": "sRGB",
-        "output_mode": "SDR",
-        "output_path": "output_sdr_default_gamma.jpeg",
+        "color_space": "Display P3",
+        "output_mode": "HDR",
+        "image_name": "output_img",
+        "hdr_format": "AVIF",
+        "output_path": "output_img.avif",
         "ccm": np.array([
             [0.4124, 0.3576, 0.1805],
             [0.2126, 0.7152, 0.0722],
             [0.0193, 0.1192, 0.9505]
         ]),
         "gamma": 2.2,
-        "demosaic": False
+        "demosaic": False,
+        "polynomial_coeffs": np.load('ILCE7CM2_Ver2_D65.npy').T,
     }
 
     # Create an instance of the ImagePipeline class

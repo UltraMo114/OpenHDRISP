@@ -1,7 +1,7 @@
 import numpy as np
 
 class RgbToXyz:
-    def __init__(self, method="greyworld", ccm=None, polynomial_coeffs=None):
+    def __init__(self, method="greyworld", ccm=None, polynomial_coeffs=None, bit_depth=None, expo_factor=None):
         """
         Initialize the RgbToXyz module.
 
@@ -13,6 +13,8 @@ class RgbToXyz:
         self.method = method
         self.ccm = ccm  # Color Correction Matrix (3x3)
         self.polynomial_coeffs = polynomial_coeffs  # Polynomial coefficients (1xN)
+        self.bit_depth = bit_depth
+        self.expo_factor = expo_factor
 
     def process(self, rgb_data):
         """
@@ -91,9 +93,17 @@ class RgbToXyz:
         # Reshape RGB data for polynomial transformation
         height, width, _ = rgb_data.shape
         rgb_flat = rgb_data.reshape(-1, 3)  # Flatten to (N x 3)
+        rgb_flat = rgb_flat * (2**self.bit_depth - 1)  # Scale to [0, 2^bit_depth - 1]
+        # Polynomial expansion
+        rgb_expanded = np.zeros((rgb_flat.shape[0], rgb_flat.shape[1] + 6))  # Expand to (N x 9)
+        rgb_expanded[:, :3] = rgb_flat  # Copy original RGB values
+        rgb_expanded[:, 3] = rgb_flat[:, 0] * rgb_flat[:, 1]  # R * G
+        rgb_expanded[:, 4] = rgb_flat[:, 0] * rgb_flat[:, 2]  # R * B
+        rgb_expanded[:, 5] = rgb_flat[:, 1] * rgb_flat[:, 2]  # G * B
+        rgb_expanded[:, 6:] = rgb_flat**2  # R^2, G^2, B^2
 
-        # Apply polynomial transformation
-        xyz_flat = np.dot(rgb_flat, self.polynomial_coeffs.T)
+        # Apply polynomial transformation using the coefficients
+        xyz_flat = np.dot(rgb_expanded, self.polynomial_coeffs.T) * self.expo_factor / 10000  # (N x 3) for PQ curve for divisible by 10000
 
         # Reshape back to original dimensions
         xyz_data = xyz_flat.reshape(height, width, 3)
