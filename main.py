@@ -10,7 +10,7 @@ from modules.RgbToImg import RgbToImg
 import matplotlib.pyplot as plt
 
 # Path to the RAW file
-raw_file_path = "cars.dng"
+raw_file_path = "DSC04657.dng"
 
 # Step 1: Read EXIF metadata
 with open(raw_file_path, 'rb') as f:

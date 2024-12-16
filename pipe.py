@@ -75,14 +75,14 @@ class ImagePipeline:
 def main():
     # Parameters dictionary
     params = {
-        "raw_file_path": "MCCC.dng",
+        "raw_file_path": "DSC04665.dng",
         "rgb_to_xyz_method": "polynomial", ## greyworld = AWB + CCM, polynomial = polynomial transform
         "xyz_to_rgb_method": "default",
         "color_space": "Display P3",
         "output_mode": "HDR",
         "image_name": "output_img",
         "hdr_format": "AVIF",
-        "output_path": "output_img.avif",
+        "output_path": "DSC04665.avif",
         "ccm": np.array([
             [0.4124, 0.3576, 0.1805],
             [0.2126, 0.7152, 0.0722],
