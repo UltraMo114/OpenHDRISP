@@ -7,7 +7,6 @@ from modules.RawToRgb import RawToRgb
 from modules.RgbToXyz import RgbToXyz
 from modules.XyzToRgb import XyzToRgb
 from modules.RgbToImg import RgbToImg
-import matplotlib.pyplot as plt
 
 class ImagePipeline:
     def __init__(self, params):

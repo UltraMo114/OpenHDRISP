@@ -7,7 +7,6 @@ from modules.RawToRgb import RawToRgb
 from modules.RgbToXyz import RgbToXyz
 from modules.XyzToRgb import XyzToRgb
 from modules.RgbToImg import RgbToImg
-import matplotlib.pyplot as plt
 
 # Path to the RAW file
 raw_file_path = "DSC04657.dng"
